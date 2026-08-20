@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-    const router = useRouter();
     const [form, setForm] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -15,11 +13,11 @@ export default function LoginPage() {
         fetch('/api/auth')
             .then(r => r.json())
             .then(data => {
-                if (data.isAdmin) router.replace('/');
+                if (data.isAdmin) window.location.href = '/';
                 else setChecking(false);
             })
             .catch(() => setChecking(false));
-    }, [router]);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,8 +31,8 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (data.success) {
-                router.replace('/');
-                router.refresh();
+                // Full reload agar NavBar re-fetch status login
+                window.location.href = '/';
             } else {
                 setError(data.message || 'Login gagal.');
             }
