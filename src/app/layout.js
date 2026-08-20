@@ -17,9 +17,9 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
         {/* Navigation Bar */}
-        <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-200/50">
-          <div className="max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4">
+        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative flex flex-row justify-between items-center py-3 sm:py-4">
 
               {/* Logo / Title */}
               <div className="flex items-center gap-3">

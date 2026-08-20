@@ -87,60 +87,80 @@ export default async function Dashboard() {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Riwayat Pertemuan Terakhir</h2>
             <p className="text-sm text-slate-500 mt-1">Daftar 5 aktivitas perkumpulan RT 05 terbaru.</p>
           </div>
-          <Link href="/pertemuan" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 text-sm whitespace-nowrap">
+          <Link href="/pertemuan" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all whitespace-nowrap">
             <i className="fa-solid fa-plus"></i> Tambah Pertemuan
           </Link>
         </div>
 
-        <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full text-left whitespace-nowrap custom-table-inlined">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Kegiatan</th>
-                <th>Deskripsi Singkat</th>
-                <th>Jimpitan Terkumpul</th>
-                <th className="text-right">Tindakan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="text-center py-8">
-                    <div className="flex flex-col items-center justify-center text-slate-400">
-                      <i className="fa-solid fa-inbox text-3xl mb-3 opacity-50"></i>
-                      <p>Belum ada rekaman pertemuan.</p>
+        {recent.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <i className="fa-solid fa-inbox text-3xl mb-3 opacity-50"></i>
+            <p className="text-sm">Belum ada rekaman pertemuan.</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: card list */}
+            <div className="sm:hidden space-y-3">
+              {recent.map((r, idx) => (
+                <div key={idx} className="rounded-xl border border-slate-100 bg-slate-50 p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{r.nama_pertemuan}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{formatTanggal(r.tanggal)}</p>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                recent.map((r, idx) => (
-                  <tr key={idx}>
-                    <td className="font-medium text-slate-600">{formatTanggal(r.tanggal)}</td>
-                    <td><span className="font-semibold text-slate-800">{r.nama_pertemuan}</span></td>
-                    <td><span className="text-slate-500 truncate max-w-[200px] inline-block">{r.catatan || '-'}</span></td>
-                    <td>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                        {formatRupiah(r.total_jimpitan || 0)}
-                      </span>
-                    </td>
-                    <td className="text-right">
-                      <Link href={`/presensi?id=${r.id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 py-1.5 px-3 text-xs">
-                        <i className="fa-solid fa-clipboard-check text-indigo-500"></i> Buka Presensi
-                      </Link>
-                    </td>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
+                      {formatRupiah(r.total_jimpitan || 0)}
+                    </span>
+                  </div>
+                  {r.catatan && <p className="text-xs text-slate-500 line-clamp-2">{r.catatan}</p>}
+                  <Link href={`/presensi?id=${r.id}`} className="mt-1 inline-flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg border border-indigo-200 bg-white text-indigo-600">
+                    <i className="fa-solid fa-clipboard-check"></i> Buka Presensi
+                  </Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block w-full overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left whitespace-nowrap custom-table-inlined">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Kegiatan</th>
+                    <th>Deskripsi Singkat</th>
+                    <th>Jimpitan Terkumpul</th>
+                    <th className="text-right">Tindakan</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {recent.map((r, idx) => (
+                    <tr key={idx}>
+                      <td className="font-medium text-slate-600">{formatTanggal(r.tanggal)}</td>
+                      <td><span className="font-semibold text-slate-800">{r.nama_pertemuan}</span></td>
+                      <td><span className="text-slate-500 truncate max-w-[200px] inline-block">{r.catatan || '-'}</span></td>
+                      <td>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                          {formatRupiah(r.total_jimpitan || 0)}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <Link href={`/presensi?id=${r.id}`} className="inline-flex items-center gap-2 py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all">
+                          <i className="fa-solid fa-clipboard-check text-indigo-500"></i> Buka Presensi
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
