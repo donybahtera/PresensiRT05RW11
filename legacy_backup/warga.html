@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warga | Presensi RT 05</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="navbar"></div>
+        <main>
+            <div class="glass-card">
+                <h2 id="formTitle">Tambah Warga Baru</h2>
+                <form id="formWarga">
+                    <input type="hidden" id="edit_id">
+                    <div class="stats-grid">
+                        <div class="form-group">
+                            <label>Nama Kepala Keluarga</label>
+                            <input type="text" id="nama" class="form-control" required placeholder="Cth: Budi Santoso">
+                        </div>
+                        <div class="form-group">
+                            <label>Jalan (Opsional)</label>
+                            <input type="text" id="blok" class="form-control" placeholder="Cth: Jl. Anggrek">
+                        </div>
+                        <div class="form-group">
+                            <label>Blok Rumah</label>
+                            <input type="text" id="no_rumah" class="form-control" required placeholder="Cth: A-12">
+                        </div>
+                    </div>
+                    <div class="text-right mt-3">
+                        <button type="button" class="btn"
+                            style="background:#e5e7eb; color:#374151; margin-right:10px; display:none;" id="btnCancel"
+                            onclick="cancelEdit()">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> <span
+                                id="btnSubmitText">Simpan Data</span></button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="d-flex justify-between items-center mb-4">
+                    <h2>Daftar Warga RT 05 RW 11</h2>
+                    <span class="btn-sm"
+                        style="background:#e5e7eb; padding: 0.3rem 0.8rem; border-radius: 1rem; color: #374151;"
+                        id="badgeTotal"></span>
+                </div>
+
+                <div id="msg-box"></div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama KK</th>
+                                <th>Jalan / Blok Rumah</th>
+                                <th style="text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rv-warga"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/script.js"></script>
+    <script>
+        document.getElementById('navbar').innerHTML = renderNavbar('warga');
+        let wargaList = [];
+
+        async function initWarga() {
+            document.getElementById('rv-warga').innerHTML = `<tr><td colspan="4" class="text-center" style="color: #6B7280; font-style: italic;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat data...</td></tr>`;
+            wargaList = await getWarga();
+            renderTable();
+        }
+        initWarga();
+
+        function renderTable() {
+            wargaList.sort((a, b) => a.nama.localeCompare(b.nama)); // Sort berdasarkan nama
+            document.getElementById('badgeTotal').innerText = `Total: ${wargaList.length} KK`;
+
+            const tbody = document.getElementById('rv-warga');
+            if (wargaList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: #6B7280; font-style: italic;">Data warga kosong.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            wargaList.forEach((w, i) => {
+                const b_str = w.blok ? `${w.blok} / ` : '';
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${w.nama}</strong></td>
+                    <td>${b_str}${w.no_rumah}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-primary btn-sm" onclick="editWarga('${w.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="hapusWarga('${w.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        document.getElementById('formWarga').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const nama = document.getElementById('nama').value;
+            const blok = document.getElementById('blok').value;
+            const no = document.getElementById('no_rumah').value;
+
+            const btnSubmit = document.getElementById('btnSubmitText');
+            btnSubmit.innerText = 'Menyimpan...';
+
+            if (id) {
+                // update
+                const idx = wargaList.findIndex(w => w.id === id);
+                if (idx > -1) {
+                    wargaList[idx].nama = nama; wargaList[idx].blok = blok; wargaList[idx].no_rumah = no;
+                }
+            } else {
+                wargaList.push({ id: generateId(), nama, blok, no_rumah: no });
+            }
+
+            await saveWarga(wargaList);
+            showMessage(id ? "Data berhasil diupdate!" : "Data berhasil ditambahkan!");
+
+            this.reset();
+            cancelEdit();
+            renderTable();
+        });
+
+        function editWarga(id) {
+            const w = wargaList.find(x => x.id === id);
+            if (!w) return;
+            document.getElementById('edit_id').value = w.id;
+            document.getElementById('nama').value = w.nama;
+            document.getElementById('blok').value = w.blok;
+            document.getElementById('no_rumah').value = w.no_rumah;
+            document.getElementById('formTitle').innerText = 'Edit Data Warga';
+            document.getElementById('btnSubmitText').innerText = 'Update Data';
+            document.getElementById('btnCancel').style.display = 'inline-block';
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit_id').value = '';
+            document.getElementById('formWarga').reset();
+            document.getElementById('formTitle').innerText = 'Tambah Warga Baru';
+            document.getElementById('btnSubmitText').innerText = 'Simpan Data';
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+
+        async function hapusWarga(id) {
+            if (confirm("Yakin ingin menghapus warga ini?")) {
+                wargaList = wargaList.filter(w => w.id !== id);
+                await saveWarga(wargaList);
+                showMessage("Data berhasil dihapus!");
+                renderTable();
+            }
+        }
+
+    </script>
+</body>
+
+</html>

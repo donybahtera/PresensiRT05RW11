@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Presensi RT 05</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="navbar"></div>
+        <main>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Kas / Jimpitan</h3>
+                    <p id="total-jimpitan">Rp 0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Jumlah Warga</h3>
+                    <p id="total-warga">0 Orang</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Pertemuan</h3>
+                    <p id="total-pertemuan">0 Kali</p>
+                </div>
+            </div>
+
+            <div class="glass-card mb-4">
+                <div class="d-flex justify-between items-center mb-4">
+                    <h2><i class="fa-solid fa-cloud-arrow-down"></i> Backup & Export Data</h2>
+                </div>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="exportCSV()"><i class="fa-solid fa-file-csv"></i> Export ke
+                        Excel (CSV)</button>
+                    <button class="btn" style="background: var(--secondary); color: white;" onclick="backupJSON()"><i
+                            class="fa-solid fa-download"></i> Backup Sistem (JSON)</button>
+                    <label class="btn" style="background: var(--accent); color: white; cursor: pointer;">
+                        <i class="fa-solid fa-upload"></i> Restore Sistem (JSON)
+                        <input type="file" id="file-restore" accept=".json" style="display: none;"
+                            onchange="restoreJSON(event)">
+                    </label>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #6B7280;">
+                    <em>* Export ke CSV berguna jika Anda ingin membuka data di Microsoft Excel. Backup & Restore (JSON)
+                        digunakan untuk memindahkan seluruh data ke perangkat lain (agar data tidak hilang).</em>
+                </p>
+                <div id="msg-box"></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="d-flex justify-between items-center mb-4">
+                    <h2>Riwayat Pertemuan Terakhir</h2>
+                    <a href="pertemuan.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Tambah</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Pertemuan</th>
+                                <th>Deskripsi</th>
+                                <th>Total Jimpitan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rv-pertemuan">
+                            <!-- Injeksi JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/script.js"></script>
+    <script>
+        document.getElementById('navbar').innerHTML = renderNavbar('dashboard');
+
+        async function initDashboard() {
+            const rv = document.getElementById('rv-pertemuan');
+            rv.innerHTML = `<tr><td colspan="5" class="text-center" style="color: #6B7280; font-style: italic;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat data...</td></tr>`;
+
+            const warga = await getWarga();
+            const pertemuan = await getPertemuan();
+
+            // Hitung Stats
+            const totalWarga = warga.length;
+            const totalPertemuan = pertemuan.length;
+            let totalJimpitan = 0;
+
+            pertemuan.forEach(p => { totalJimpitan += p.total_jimpitan || 0; });
+
+            document.getElementById('total-warga').innerText = `${totalWarga} Orang`;
+            document.getElementById('total-pertemuan').innerText = `${totalPertemuan} Kali`;
+            document.getElementById('total-jimpitan').innerText = formatRupiah(totalJimpitan);
+
+            // Render 5 Pertemuan Terakhir
+
+            // sort descending  
+            const recent = [...pertemuan].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 5);
+
+            if (recent.length === 0) {
+                rv.innerHTML = `<tr><td colspan="5" class="text-center" style="color: #6B7280; font-style: italic;">Belum ada data pertemuan.</td></tr>`;
+            } else {
+                let html = '';
+                recent.forEach(r => {
+                    html += `<tr>
+                        <td>${formatTanggal(r.tanggal)}</td>
+                        <td><strong>${r.nama_pertemuan}</strong></td>
+                        <td>${r.catatan || '-'}</td>
+                        <td style="color:var(--success); font-weight:bold;">${formatRupiah(r.total_jimpitan || 0)}</td>
+                        <td>
+                            <a href="presensi.html?id=${r.id}" class="btn btn-primary btn-sm"><i class="fa-solid fa-list-check"></i> Cek Presensi</a>
+                        </td>
+                    </tr>`;
+                });
+                rv.innerHTML = html;
+            }
+        }
+
+        initDashboard();
+    </script>
+</body>
+
+</html>

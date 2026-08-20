@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pertemuan | Presensi RT 05</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="navbar"></div>
+        <main>
+            <div class="glass-card">
+                <h2 id="formTitle">Jadwalkan Pertemuan Baru</h2>
+                <form id="formPertemuan">
+                    <input type="hidden" id="edit_id">
+                    <div class="stats-grid">
+                        <div class="form-group">
+                            <label>Tanggal Pertemuan</label>
+                            <input type="date" id="tanggal" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama/Agenda Pertemuan</label>
+                            <input type="text" id="nama_pertemuan" class="form-control" required
+                                placeholder="Cth: Rapat Bulanan RT 05">
+                        </div>
+                        <div class="form-group">
+                            <label>Catatan (Opsional)</label>
+                            <input type="text" id="catatan" class="form-control"
+                                placeholder="Cth: Membahas lomba pitulasan">
+                        </div>
+                    </div>
+                    <div class="text-right mt-3">
+                        <button type="button" class="btn"
+                            style="background:#e5e7eb; color:#374151; margin-right:10px; display:none;" id="btnCancel"
+                            onclick="cancelEdit()">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> <span
+                                id="btnSubmitText">Simpan Pertemuan</span></button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="d-flex justify-between items-center mb-4">
+                    <h2>Daftar Pertemuan RT 05 RW 11</h2>
+                </div>
+
+                <div id="msg-box"></div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Nama Pertemuan</th>
+                                <th>Catatan</th>
+                                <th>Total Jimpitan</th>
+                                <th style="text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rv-pertemuan"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/script.js"></script>
+    <script>
+        document.getElementById('navbar').innerHTML = renderNavbar('pertemuan');
+
+        let pertemuanList = [];
+        const tglInput = document.getElementById('tanggal');
+        if (!tglInput.value) {
+            tglInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        async function initPertemuan() {
+            document.getElementById('rv-pertemuan').innerHTML = `<tr><td colspan="5" class="text-center" style="color: #6B7280; font-style: italic;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat data...</td></tr>`;
+            pertemuanList = await getPertemuan();
+            renderTable();
+        }
+        initPertemuan();
+
+        function renderTable() {
+            // sort desc
+            pertemuanList.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+            const tbody = document.getElementById('rv-pertemuan');
+
+            if (pertemuanList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color: #6B7280; font-style: italic;">Belum ada jadwal pertemuan.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            pertemuanList.forEach((p) => {
+                html += `<tr>
+                    <td>${formatTanggal(p.tanggal)}</td>
+                    <td><strong>${p.nama_pertemuan}</strong></td>
+                    <td>${p.catatan || '-'}</td>
+                    <td><strong style="color:var(--success);">${formatRupiah(p.total_jimpitan || 0)}</strong></td>
+                    <td style="text-align: right;">
+                        <a href="presensi.html?id=${p.id}" class="btn btn-success btn-sm" title="Presensi"><i class="fa-solid fa-clipboard-user"></i></a>
+                        <button class="btn btn-primary btn-sm" onclick="editPertemuan('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="hapusPertemuan('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        document.getElementById('formPertemuan').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const nama_pertemuan = document.getElementById('nama_pertemuan').value;
+            const catatan = document.getElementById('catatan').value;
+
+            const btnSubmit = document.getElementById('btnSubmitText');
+            btnSubmit.innerText = 'Menyimpan...';
+
+            if (id) {
+                // update
+                const idx = pertemuanList.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    pertemuanList[idx].tanggal = tanggal;
+                    pertemuanList[idx].nama_pertemuan = nama_pertemuan;
+                    pertemuanList[idx].catatan = catatan;
+                }
+            } else {
+                pertemuanList.push({
+                    id: generateId(),
+                    tanggal,
+                    nama_pertemuan,
+                    catatan,
+                    presensiData: {}, // Format { warga_id: {hadir: 1, jimpitan: 5000} }
+                    total_jimpitan: 0
+                });
+            }
+
+            await savePertemuan(pertemuanList);
+            showMessage(id ? "Pertemuan berhasil diupdate!" : "Pertemuan berhasil ditambahkan!");
+
+            this.reset();
+            cancelEdit();
+            renderTable();
+        });
+
+        function editPertemuan(id) {
+            const p = pertemuanList.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('edit_id').value = p.id;
+            document.getElementById('tanggal').value = p.tanggal;
+            document.getElementById('nama_pertemuan').value = p.nama_pertemuan;
+            document.getElementById('catatan').value = p.catatan;
+            document.getElementById('formTitle').innerText = 'Edit Pertemuan';
+            document.getElementById('btnSubmitText').innerText = 'Update Pertemuan';
+            document.getElementById('btnCancel').style.display = 'inline-block';
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit_id').value = '';
+            document.getElementById('formPertemuan').reset();
+            document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('formTitle').innerText = 'Jadwalkan Pertemuan Baru';
+            document.getElementById('btnSubmitText').innerText = 'Simpan Pertemuan';
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+
+        async function hapusPertemuan(id) {
+            if (confirm("Yakin ingin menghapus agenda pertemuan ini? Data presensi juga akan terhapus.")) {
+                pertemuanList = pertemuanList.filter(x => x.id !== id);
+                await savePertemuan(pertemuanList);
+                showMessage("Pertemuan berhasil dihapus!");
+                renderTable();
+            }
+        }
+    </script>
+</body>
+
+</html>

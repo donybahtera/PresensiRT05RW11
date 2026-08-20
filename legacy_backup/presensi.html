@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi Detail | Presensi RT 05</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="navbar"></div>
+        <main>
+            <div class="mb-4 d-flex justify-between items-center">
+                <a href="pertemuan.html" class="btn" style="background:#e5e7eb; color:#374151;"><i
+                        class="fa-solid fa-arrow-left"></i> Kembali</a>
+            </div>
+
+            <div class="glass-card mb-4" id="detailCard" style="display: none;">
+                <h2>Detail Pertemuan</h2>
+                <div style="font-size: 1.1rem; line-height: 1.6;">
+                    <p><strong>Nama Pertemuan :</strong> <span id="l_nama"></span></p>
+                    <p><strong>Tanggal :</strong> <span id="l_tanggal"></span></p>
+                    <p><strong>Catatan :</strong> <span id="l_catatan"></span></p>
+                    <p><strong>Total Jimpitan Terkumpul :</strong> <span id="l_total"
+                            style="font-size: 1.5rem; font-weight: bold; color: var(--success);"></span></p>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="d-flex justify-between items-center mb-4">
+                    <h2>Input Presensi & Jimpitan</h2>
+                    <button type="button" class="btn btn-primary" onclick="simpanPresensi()">
+                        <i class="fa-solid fa-save"></i> Simpan Semua Data
+                    </button>
+                </div>
+
+                <div id="msg-box"></div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama KK</th>
+                                <th>Jalan/Blok Rumah</th>
+                                <th style="text-align: center;">Kehadiran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rv-presensi">
+                            <!-- Injeksi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-between items-center mt-4">
+                    <div style="flex: 1; margin-right: 20px;">
+                        <label
+                            style="font-weight:600; display:block; margin-bottom:0.5rem; color:var(--text-main);">Masukan
+                            Total Jimpitan Terkumpul (Rp)</label>
+                        <input type="number" id="inputTotalJimpitan" class="form-control" placeholder="Cth: 50000"
+                            min="0" step="1000"
+                            style="max-width: 300px; font-weight:bold; color:var(--primary); font-size:1.1rem; background:rgba(255,255,255,0.7);">
+                    </div>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="simpanPresensi()"><i
+                            class="fa-solid fa-save"></i> Simpan Semua Data</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/script.js"></script>
+    <script>
+        document.getElementById('navbar').innerHTML = renderNavbar('pertemuan');
+
+        // Ambil Param ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const meetingId = urlParams.get('id');
+
+        let pertemuanList = [];
+        let wargaList = [];
+        let currentMeeting = null;
+
+        async function initPresensi() {
+            document.getElementById('rv-presensi').innerHTML = `<tr><td colspan="4" class="text-center" style="color: #6B7280; font-style: italic;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat data...</td></tr>`;
+
+            pertemuanList = await getPertemuan();
+            wargaList = await getWarga();
+            currentMeeting = pertemuanList.find(x => x.id === meetingId);
+
+            if (!currentMeeting) {
+                alert("ID Pertemuan tidak valid!");
+                window.location.href = "pertemuan.html";
+                return;
+            }
+
+            // Ensure data struct
+            if (!currentMeeting.presensiData) currentMeeting.presensiData = {};
+
+            document.getElementById('detailCard').style.display = 'block';
+            document.getElementById('l_nama').innerText = currentMeeting.nama_pertemuan;
+            document.getElementById('l_tanggal').innerText = formatTanggal(currentMeeting.tanggal);
+            document.getElementById('l_catatan').innerText = currentMeeting.catatan || '-';
+            document.getElementById('l_total').innerText = formatRupiah(currentMeeting.total_jimpitan || 0);
+            document.getElementById('inputTotalJimpitan').value = currentMeeting.total_jimpitan || '';
+
+            renderTabel();
+        }
+        initPresensi();
+
+        function renderTabel() {
+            const tbody = document.getElementById('rv-presensi');
+            wargaList.sort((a, b) => a.nama.localeCompare(b.nama));
+
+            if (wargaList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center">Belum ada data warga. Silakan tambah data warga terlebih dahulu di halaman Data Warga.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            wargaList.forEach((w, i) => {
+                const b_str = w.blok ? `${w.blok} / ` : '';
+                const pData = currentMeeting.presensiData[w.id] || { hadir: 0 };
+                const isChecked = pData.hadir ? 'checked' : '';
+
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${w.nama}</strong></td>
+                    <td>${b_str}${w.no_rumah}</td>
+                    <td align="center">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="hadir_${w.id}" value="1" ${isChecked}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        async function simpanPresensi() {
+            let totalJimpitanBaru = parseInt(document.getElementById('inputTotalJimpitan').value, 10) || 0;
+
+            wargaList.forEach(w => {
+                const elHadir = document.getElementById(`hadir_${w.id}`);
+                const hadir = elHadir.checked ? 1 : 0;
+
+                currentMeeting.presensiData[w.id] = { hadir };
+            });
+
+            currentMeeting.total_jimpitan = totalJimpitanBaru;
+
+            // Simpan ke db & localstorage
+            const idx = pertemuanList.findIndex(x => x.id === currentMeeting.id);
+            pertemuanList[idx] = currentMeeting;
+            await savePertemuan(pertemuanList);
+
+            document.getElementById('l_total').innerText = formatRupiah(totalJimpitanBaru);
+            showMessage("Data Presensi & Jimpitan berhasil disimpan secara cloud & lokal!");
+        }
+    </script>
+</body>
+
+</html>
