@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { formatRupiah, formatTanggal } from '@/lib/utils';
+import { useAdminSession } from '@/lib/auth';
 
 function PresensiDetail() {
     const searchParams = useSearchParams();
@@ -16,8 +17,8 @@ function PresensiDetail() {
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState(null);
     const [totalJimpitan, setTotalJimpitan] = useState('');
-
     const [kehadiran, setKehadiran] = useState({});
+    const { isAdmin, loading: authLoading } = useAdminSession();
 
     useEffect(() => {
         if (!meetingId) {
@@ -55,7 +56,6 @@ function PresensiDetail() {
                 initHadir[w.id] = (meeting.presensiData[w.id]?.hadir === 1);
             });
             setKehadiran(initHadir);
-
             setLoading(false);
         } catch (e) {
             console.error(e);
@@ -111,7 +111,7 @@ function PresensiDetail() {
     return (
         <div className="space-y-6 animate-fade-in">
             <div className="flex items-center gap-4">
-                <Link href="/pertemuan" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 px-3.5 rounded-full text-slate-500">
+                <Link href="/pertemuan" className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full outline-none bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:border-slate-300">
                     <i className="fa-solid fa-arrow-left"></i>
                 </Link>
                 <div>
@@ -120,11 +120,18 @@ function PresensiDetail() {
                 </div>
             </div>
 
+            {/* Banner mode tamu */}
+            {!authLoading && !isAdmin && (
+                <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    <i className="fa-solid fa-eye text-amber-500 text-lg shrink-0"></i>
+                    <p>Anda dalam <strong>Mode Tamu</strong>. Data presensi hanya bisa dilihat. <a href="/login" className="font-semibold underline hover:text-amber-900">Login sebagai Admin</a> untuk mengubah.</p>
+                </div>
+            )}
+
             {currentMeeting && (
                 <div className="bg-indigo-600 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-600/20">
                     <div className="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-5 rounded-full"></div>
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full"></div>
-
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold uppercase tracking-widest text-indigo-100 mb-4">
@@ -135,7 +142,6 @@ function PresensiDetail() {
                                 {currentMeeting.catatan || 'Agenda reguler tanpa catatan khusus yang ditetapkan.'}
                             </p>
                         </div>
-
                         <div className="flex flex-row md:flex-col gap-8 md:gap-4 justify-start md:justify-center items-start md:items-end">
                             <div className="text-left md:text-right">
                                 <p className="text-xs font-medium text-indigo-200 uppercase mb-1">Terlaksana pada</p>
@@ -159,17 +165,18 @@ function PresensiDetail() {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8 !p-0 overflow-hidden border-0 ring-1 ring-slate-200 bg-white shadow-md">
-
+            <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-slate-200 shadow-md">
                 <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-slate-50/50">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800">Ceklis Kehadiran Registran</h3>
                         <p className="text-xs text-slate-500 mt-1">Total {wargaList.length} warga yang dapat diabsen pada agenda ini.</p>
                     </div>
-
-                    <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800" onClick={simpanPresensi}>
-                        <i className="fa-solid fa-cloud-arrow-up"></i> Simpan Data Skrg
-                    </button>
+                    {/* Tombol simpan hanya untuk admin */}
+                    {isAdmin && (
+                        <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500" onClick={simpanPresensi}>
+                            <i className="fa-solid fa-cloud-arrow-up"></i> Simpan Data Skrg
+                        </button>
+                    )}
                 </div>
 
                 <div className="w-full overflow-x-auto">
@@ -196,10 +203,18 @@ function PresensiDetail() {
                                         <td><strong className="text-slate-800">{w.nama}</strong></td>
                                         <td className="text-slate-500 text-sm">{w.blok ? `${w.blok} / ` : ''}{w.no_rumah}</td>
                                         <td className="text-center align-middle">
-                                            <label className="relative inline-flex items-center cursor-pointer justify-center">
-                                                <input type="checkbox" className="sr-only peer" checked={kehadiran[w.id] || false} onChange={e => setItemHadir(w.id, e.target.checked)} />
-                                                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                                            </label>
+                                            {isAdmin ? (
+                                                // Admin: toggle interaktif
+                                                <label className="relative inline-flex items-center cursor-pointer justify-center">
+                                                    <input type="checkbox" className="sr-only peer" checked={kehadiran[w.id] || false} onChange={e => setItemHadir(w.id, e.target.checked)} />
+                                                    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                                </label>
+                                            ) : (
+                                                // Tamu: tampilkan status saja (read-only)
+                                                kehadiran[w.id]
+                                                    ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i className="fa-solid fa-check"></i> Hadir</span>
+                                                    : <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500"><i className="fa-solid fa-xmark"></i> Tidak</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -208,34 +223,32 @@ function PresensiDetail() {
                     </table>
                 </div>
 
-                <div className="p-6 lg:p-8 bg-slate-50 border-t border-slate-200">
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <div className="w-full lg:w-1/2">
-                            <label className="block text-sm font-bold text-slate-800 mb-2">Penyesuaian Total Kas (Jimpitan)</label>
-                            <p className="text-xs text-slate-500 mb-4 max-w-sm">Masukkan hasil hitungan dana terkumpul manual. Nominal akan disimpan pada log riwayat pertemuan ini.</p>
-
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <span className="text-slate-400 font-semibold text-lg">Rp</span>
+                {/* Form jimpitan & simpan — hanya admin */}
+                {isAdmin && (
+                    <div className="p-6 lg:p-8 bg-slate-50 border-t border-slate-200">
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div className="w-full lg:w-1/2">
+                                <label className="block text-sm font-bold text-slate-800 mb-2">Penyesuaian Total Kas (Jimpitan)</label>
+                                <p className="text-xs text-slate-500 mb-4 max-w-sm">Masukkan hasil hitungan dana terkumpul manual. Nominal akan disimpan pada log riwayat pertemuan ini.</p>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span className="text-slate-400 font-semibold text-lg">Rp</span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xl font-bold text-indigo-700 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 pl-12 transition-all"
+                                        placeholder="0" min="0" step="500"
+                                        value={totalJimpitan}
+                                        onChange={(e) => setTotalJimpitan(e.target.value)}
+                                    />
                                 </div>
-                                <input
-                                    type="number"
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 pl-12 text-xl font-bold !bg-slate-50 !py-3 !rounded-xl text-indigo-700"
-                                    placeholder="0"
-                                    min="0"
-                                    step="500"
-                                    value={totalJimpitan}
-                                    onChange={(e) => setTotalJimpitan(e.target.value)}
-                                />
                             </div>
+                            <button className="inline-flex items-center justify-center gap-2 px-8 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 w-full lg:w-auto shadow-lg shadow-indigo-600/30" onClick={simpanPresensi}>
+                                <i className="fa-solid fa-shield-check text-lg"></i> Validasi & Simpan Semua
+                            </button>
                         </div>
-
-                        <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 px-8 py-3 w-full lg:w-auto mt-2 lg:mt-0 shadow-lg shadow-indigo-600/30" onClick={simpanPresensi}>
-                            <i className="fa-solid fa-shield-check text-lg"></i> Validasi & Simpan Semua
-                        </button>
                     </div>
-                </div>
-
+                )}
             </div>
         </div>
     );

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { generateId, formatRupiah, formatTanggal } from '@/lib/utils';
+import { useAdminSession } from '@/lib/auth';
 
 export default function PertemuanPage() {
     const [pertemuanList, setPertemuanList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState(null);
+    const { isAdmin, loading: authLoading } = useAdminSession();
 
     const [editId, setEditId] = useState('');
     const [formData, setFormData] = useState({ tanggal: new Date().toISOString().split('T')[0], nama_pertemuan: '', catatan: '' });
@@ -102,42 +104,52 @@ export default function PertemuanPage() {
                 </div>
             )}
 
-            {/* Form Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-                <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <i className={`fa-solid ${editId ? 'fa-pen text-indigo-500' : 'fa-calendar-plus text-emerald-500'}`}></i>
-                    {editId ? 'Update Detail Pertemuan' : 'Jadwalkan Pertemuan Baru'}
-                </h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Pelaksanaan</label>
-                            <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required
-                                value={formData.tanggal} onChange={e => setFormData({ ...formData, tanggal: e.target.value })} />
+            {/* Banner mode tamu */}
+            {!authLoading && !isAdmin && (
+                <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    <i className="fa-solid fa-eye text-amber-500 text-lg shrink-0"></i>
+                    <p>Anda dalam <strong>Mode Tamu</strong>. Hanya dapat melihat data. <a href="/login" className="font-semibold underline hover:text-amber-900">Login sebagai Admin</a> untuk mengedit.</p>
+                </div>
+            )}
+
+            {/* Form Card — hanya admin */}
+            {!authLoading && isAdmin && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
+                    <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <i className={`fa-solid ${editId ? 'fa-pen text-indigo-500' : 'fa-calendar-plus text-emerald-500'}`}></i>
+                        {editId ? 'Update Detail Pertemuan' : 'Jadwalkan Pertemuan Baru'}
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Pelaksanaan</label>
+                                <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required
+                                    value={formData.tanggal} onChange={e => setFormData({ ...formData, tanggal: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nama / Agenda Acara</label>
+                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: Rapat Bulanan RT"
+                                    value={formData.nama_pertemuan} onChange={e => setFormData({ ...formData, nama_pertemuan: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Keterangan Tambahan <span className="text-slate-400 font-normal">(Opsional)</span></label>
+                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" placeholder="Cth: Membahas laporan kas"
+                                    value={formData.catatan} onChange={e => setFormData({ ...formData, catatan: e.target.value })} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Nama / Agenda Acara</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: Rapat Bulanan RT"
-                                value={formData.nama_pertemuan} onChange={e => setFormData({ ...formData, nama_pertemuan: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Keterangan Tambahan <span className="text-slate-400 font-normal">(Opsional)</span></label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" placeholder="Cth: Membahas laporan kas"
-                                value={formData.catatan} onChange={e => setFormData({ ...formData, catatan: e.target.value })} />
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
-                        {editId && (
-                            <button type="button" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200" onClick={cancelEdit}>
-                                Batal
+                        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
+                            {editId && (
+                                <button type="button" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none bg-white text-slate-700 border border-slate-200 hover:bg-slate-50" onClick={cancelEdit}>
+                                    Batal
+                                </button>
+                            )}
+                            <button type="submit" className="inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500">
+                                <i className="fa-solid fa-cloud-arrow-up"></i> <span>{editId ? 'Simpan Perubahan' : 'Publish Agenda'}</span>
                             </button>
-                        )}
-                        <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 px-8">
-                            <i className="fa-solid fa-cloud-arrow-up"></i> <span>{editId ? 'Simpan Perubahan' : 'Publish Agenda'}</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Table Card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 lg:p-8">
@@ -180,12 +192,16 @@ export default function PertemuanPage() {
                                         <Link href={`/presensi?id=${p.id}`} className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white">
                                             <i className="fa-solid fa-list-check"></i> Absensi
                                         </Link>
-                                        <button className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600" onClick={() => editPertemuan(p.id)}>
-                                            <i className="fa-solid fa-pen"></i>
-                                        </button>
-                                        <button className="px-3 py-2 text-xs rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusPertemuan(p.id)}>
-                                            <i className="fa-solid fa-trash-can"></i>
-                                        </button>
+                                        {isAdmin && (
+                                            <>
+                                                <button className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600" onClick={() => editPertemuan(p.id)}>
+                                                    <i className="fa-solid fa-pen"></i>
+                                                </button>
+                                                <button className="px-3 py-2 text-xs rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusPertemuan(p.id)}>
+                                                    <i className="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -225,12 +241,16 @@ export default function PertemuanPage() {
                                                     <Link href={`/presensi?id=${p.id}`} className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all w-[110px] justify-center">
                                                         <i className="fa-solid fa-list-check"></i> Absensi
                                                     </Link>
-                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" onClick={() => editPertemuan(p.id)}>
-                                                        <i className="fa-solid fa-pen"></i>
-                                                    </button>
-                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200" onClick={() => hapusPertemuan(p.id)}>
-                                                        <i className="fa-solid fa-trash-can"></i>
-                                                    </button>
+                                                    {isAdmin && (
+                                                        <>
+                                                            <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" onClick={() => editPertemuan(p.id)}>
+                                                                <i className="fa-solid fa-pen"></i>
+                                                            </button>
+                                                            <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200" onClick={() => hapusPertemuan(p.id)}>
+                                                                <i className="fa-solid fa-trash-can"></i>
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

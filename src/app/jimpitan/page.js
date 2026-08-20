@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { generateId, formatRupiah, formatTanggal } from '@/lib/utils';
+import { useAdminSession } from '@/lib/auth';
 
 export default function JimpitanPage() {
     const [pengeluaran, setPengeluaran] = useState([]);
@@ -14,6 +15,7 @@ export default function JimpitanPage() {
         keterangan: '',
         jumlah: '',
     });
+    const { isAdmin, loading: authLoading } = useAdminSession();
 
     useEffect(() => { fetchData(); }, []);
 
@@ -29,7 +31,7 @@ export default function JimpitanPage() {
 
             if (jsonJ.status === 'success') {
                 const sorted = (jsonJ.data || [])
-                    .filter(j => j.jenis === 'pengeluaran' || !j.jenis) // hanya pengeluaran
+                    .filter(j => j.jenis === 'pengeluaran' || !j.jenis)
                     .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
                 setPengeluaran(sorted);
             }
@@ -101,6 +103,14 @@ export default function JimpitanPage() {
                 </div>
             )}
 
+            {/* Banner mode tamu */}
+            {!authLoading && !isAdmin && (
+                <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    <i className="fa-solid fa-eye text-amber-500 text-lg shrink-0"></i>
+                    <p>Anda dalam <strong>Mode Tamu</strong>. Hanya dapat melihat data kas. <a href="/login" className="font-semibold underline hover:text-amber-900">Login sebagai Admin</a> untuk mengedit.</p>
+                </div>
+            )}
+
             {/* Ringkasan Saldo */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className={`rounded-2xl p-6 border shadow-sm flex items-center gap-4 ${saldo >= 0 ? 'bg-white border-slate-100' : 'bg-rose-50 border-rose-100'}`}>
@@ -112,7 +122,6 @@ export default function JimpitanPage() {
                         <h3 className={`text-2xl font-bold tracking-tight ${saldo >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>{formatRupiah(saldo)}</h3>
                     </div>
                 </div>
-
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 shrink-0">
                         <i className="fa-solid fa-arrow-trend-up text-xl"></i>
@@ -123,7 +132,6 @@ export default function JimpitanPage() {
                         <p className="text-xs text-slate-400 mt-0.5">Akumulasi semua pertemuan</p>
                     </div>
                 </div>
-
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-rose-100 text-rose-600 shrink-0">
                         <i className="fa-solid fa-arrow-trend-down text-xl"></i>
@@ -135,7 +143,7 @@ export default function JimpitanPage() {
                 </div>
             </div>
 
-            {/* Info Pemasukan Otomatis */}
+            {/* Info */}
             <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 px-6 flex items-center gap-3 text-emerald-700 text-sm">
                 <i className="fa-solid fa-circle-info text-emerald-500 text-lg shrink-0"></i>
                 <p>
@@ -144,48 +152,50 @@ export default function JimpitanPage() {
                 </p>
             </div>
 
-            {/* Form Catat Pengeluaran */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-                <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <i className={`fa-solid ${editId ? 'fa-pen text-indigo-500' : 'fa-minus-circle text-rose-500'}`}></i>
-                    {editId ? 'Edit Catatan Pengeluaran' : 'Catat Pengeluaran Baru'}
-                </h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
-                            <input type="date" required
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
-                                value={form.tanggal} onChange={e => setForm({ ...form, tanggal: e.target.value })} />
+            {/* Form Catat Pengeluaran — hanya admin */}
+            {!authLoading && isAdmin && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
+                    <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <i className={`fa-solid ${editId ? 'fa-pen text-indigo-500' : 'fa-minus-circle text-rose-500'}`}></i>
+                        {editId ? 'Edit Catatan Pengeluaran' : 'Catat Pengeluaran Baru'}
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
+                                <input type="date" required
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
+                                    value={form.tanggal} onChange={e => setForm({ ...form, tanggal: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Keterangan Pengeluaran</label>
+                                <input type="text" required placeholder="Cth: Beli konsumsi rapat"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
+                                    value={form.keterangan} onChange={e => setForm({ ...form, keterangan: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nominal (Rp)</label>
+                                <input type="number" required min="0" step="500" placeholder="0"
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
+                                    value={form.jumlah} onChange={e => setForm({ ...form, jumlah: e.target.value })} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Keterangan Pengeluaran</label>
-                            <input type="text" required placeholder="Cth: Beli konsumsi rapat"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
-                                value={form.keterangan} onChange={e => setForm({ ...form, keterangan: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Nominal (Rp)</label>
-                            <input type="number" required min="0" step="500" placeholder="0"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
-                                value={form.jumlah} onChange={e => setForm({ ...form, jumlah: e.target.value })} />
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
-                        {editId && (
-                            <button type="button" onClick={cancelEdit}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all">
-                                Batal
+                        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
+                            {editId && (
+                                <button type="button" onClick={cancelEdit}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all">
+                                    Batal
+                                </button>
+                            )}
+                            <button type="submit"
+                                className="inline-flex items-center gap-2 px-8 py-2.5 text-sm font-semibold rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-sm shadow-rose-200">
+                                <i className="fa-solid fa-cloud-arrow-up"></i>
+                                {editId ? 'Simpan Perubahan' : 'Catat Pengeluaran'}
                             </button>
-                        )}
-                        <button type="submit"
-                            className="inline-flex items-center gap-2 px-8 py-2.5 text-sm font-semibold rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-sm shadow-rose-200">
-                            <i className="fa-solid fa-cloud-arrow-up"></i>
-                            {editId ? 'Simpan Perubahan' : 'Catat Pengeluaran'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Tabel Pengeluaran */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
@@ -193,7 +203,6 @@ export default function JimpitanPage() {
                     <h2 className="text-lg font-bold text-slate-900">Riwayat Pengeluaran Kas</h2>
                     <p className="text-sm text-slate-500 mt-1">{pengeluaran.length} catatan pengeluaran tersimpan.</p>
                 </div>
-
                 <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
                     <table className="w-full text-left whitespace-nowrap custom-table-inlined">
                         <thead>
@@ -201,19 +210,19 @@ export default function JimpitanPage() {
                                 <th>Tanggal</th>
                                 <th>Keterangan</th>
                                 <th className="text-right">Jumlah Pengeluaran</th>
-                                <th className="text-right">Aksi</th>
+                                {isAdmin && <th className="text-right">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="4" className="text-center py-12">
+                                <tr><td colSpan={isAdmin ? 4 : 3} className="text-center py-12">
                                     <div className="flex flex-col items-center gap-3 text-slate-400">
                                         <i className="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i>
                                         <p className="text-sm">Memuat data kas...</p>
                                     </div>
                                 </td></tr>
                             ) : pengeluaran.length === 0 ? (
-                                <tr><td colSpan="4" className="text-center py-12">
+                                <tr><td colSpan={isAdmin ? 4 : 3} className="text-center py-12">
                                     <div className="flex flex-col items-center gap-3 text-slate-400">
                                         <i className="fa-solid fa-receipt text-3xl opacity-50"></i>
                                         <p className="text-sm">Belum ada catatan pengeluaran.</p>
@@ -227,18 +236,20 @@ export default function JimpitanPage() {
                                         <td className="text-right font-bold text-rose-600 text-base">
                                             - {formatRupiah(j.jumlah)}
                                         </td>
-                                        <td className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => edit(j.id)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-all">
-                                                    <i className="fa-solid fa-pen text-indigo-500"></i> Edit
-                                                </button>
-                                                <button onClick={() => hapus(j.id)}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-rose-500 bg-white hover:bg-rose-50 hover:border-rose-200 transition-all">
-                                                    <i className="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                                        {isAdmin && (
+                                            <td className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => edit(j.id)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-all">
+                                                        <i className="fa-solid fa-pen text-indigo-500"></i> Edit
+                                                    </button>
+                                                    <button onClick={() => hapus(j.id)}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-rose-500 bg-white hover:bg-rose-50 hover:border-rose-200 transition-all">
+                                                        <i className="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))
                             )}
@@ -246,11 +257,11 @@ export default function JimpitanPage() {
                         {pengeluaran.length > 0 && (
                             <tfoot>
                                 <tr className="bg-slate-50 border-t border-slate-200">
-                                    <td colSpan="2" className="px-5 py-4 font-bold text-sm text-slate-700">Saldo Akhir</td>
+                                    <td colSpan={isAdmin ? 2 : 2} className="px-5 py-4 font-bold text-sm text-slate-700">Saldo Akhir</td>
                                     <td className={`px-5 py-4 text-right font-extrabold text-base ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                         {formatRupiah(saldo)}
                                     </td>
-                                    <td></td>
+                                    {isAdmin && <td></td>}
                                 </tr>
                             </tfoot>
                         )}

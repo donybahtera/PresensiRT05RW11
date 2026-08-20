@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { generateId } from '@/lib/utils';
+import { useAdminSession } from '@/lib/auth';
 
 export default function WargaPage() {
     const [wargaList, setWargaList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState(null);
+    const { isAdmin, loading: authLoading } = useAdminSession();
 
     const [editId, setEditId] = useState('');
     const [formData, setFormData] = useState({ nama: '', blok: '', no_rumah: '' });
@@ -96,42 +98,52 @@ export default function WargaPage() {
                 </div>
             )}
 
-            {/* Form Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-                <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <i className={`fa-solid ${editId ? 'fa-pen-to-square text-indigo-500' : 'fa-user-plus text-emerald-500'}`}></i>
-                    {editId ? 'Edit Data Warga' : 'Registrasi Warga Baru'}
-                </h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Nama Kepala Keluarga</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: Budi Santoso"
-                                value={formData.nama} onChange={e => setFormData({ ...formData, nama: e.target.value })} />
+            {/* Banner mode tamu */}
+            {!authLoading && !isAdmin && (
+                <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    <i className="fa-solid fa-eye text-amber-500 text-lg shrink-0"></i>
+                    <p>Anda dalam <strong>Mode Tamu</strong>. Hanya dapat melihat data. <a href="/login" className="font-semibold underline hover:text-amber-900">Login sebagai Admin</a> untuk mengedit.</p>
+                </div>
+            )}
+
+            {/* Form Card — hanya tampil jika admin */}
+            {!authLoading && isAdmin && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
+                    <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <i className={`fa-solid ${editId ? 'fa-pen-to-square text-indigo-500' : 'fa-user-plus text-emerald-500'}`}></i>
+                        {editId ? 'Edit Data Warga' : 'Registrasi Warga Baru'}
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nama Kepala Keluarga</label>
+                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: Budi Santoso"
+                                    value={formData.nama} onChange={e => setFormData({ ...formData, nama: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Jalan / Komplek <span className="text-slate-400 font-normal">(Opsional)</span></label>
+                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" placeholder="Cth: Jl. Anggrek"
+                                    value={formData.blok} onChange={e => setFormData({ ...formData, blok: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Blok / Nomor Rumah</label>
+                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: A-12"
+                                    value={formData.no_rumah} onChange={e => setFormData({ ...formData, no_rumah: e.target.value })} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Jalan / Komplek <span className="text-slate-400 font-normal">(Opsional)</span></label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" placeholder="Cth: Jl. Anggrek"
-                                value={formData.blok} onChange={e => setFormData({ ...formData, blok: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Blok / Nomor Rumah</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all duration-200 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" required placeholder="Cth: A-12"
-                                value={formData.no_rumah} onChange={e => setFormData({ ...formData, no_rumah: e.target.value })} />
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
-                        {editId && (
-                            <button type="button" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200" onClick={cancelEdit}>
-                                Batal
+                        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
+                            {editId && (
+                                <button type="button" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200" onClick={cancelEdit}>
+                                    Batal
+                                </button>
+                            )}
+                            <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 px-8">
+                                <i className="fa-solid fa-save"></i> <span>{editId ? 'Simpan Perubahan' : 'Tambahkan'}</span>
                             </button>
-                        )}
-                        <button type="submit" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 px-8">
-                            <i className="fa-solid fa-save"></i> <span>{editId ? 'Simpan Perubahan' : 'Tambahkan'}</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Table Card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 lg:p-8">
@@ -166,14 +178,16 @@ export default function WargaPage() {
                                             {w.blok ? `${w.blok} / ` : ''}{w.no_rumah}
                                         </p>
                                     </div>
-                                    <div className="flex gap-1.5 shrink-0">
-                                        <button className="p-2 rounded-lg border border-slate-200 bg-white text-indigo-500" onClick={() => editWarga(w.id)}>
-                                            <i className="fa-solid fa-pen text-xs"></i>
-                                        </button>
-                                        <button className="p-2 rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusWarga(w.id)}>
-                                            <i className="fa-regular fa-trash-can text-xs"></i>
-                                        </button>
-                                    </div>
+                                    {isAdmin && (
+                                        <div className="flex gap-1.5 shrink-0">
+                                            <button className="p-2 rounded-lg border border-slate-200 bg-white text-indigo-500" onClick={() => editWarga(w.id)}>
+                                                <i className="fa-solid fa-pen text-xs"></i>
+                                            </button>
+                                            <button className="p-2 rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusWarga(w.id)}>
+                                                <i className="fa-regular fa-trash-can text-xs"></i>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -186,7 +200,7 @@ export default function WargaPage() {
                                         <th className="w-16 text-center">No</th>
                                         <th>Nama KK</th>
                                         <th>Alamat Domisili</th>
-                                        <th className="text-right">Aksi</th>
+                                        {isAdmin && <th className="text-right">Aksi</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -200,16 +214,18 @@ export default function WargaPage() {
                                                     {w.blok ? `${w.blok} / ` : ''}{w.no_rumah}
                                                 </span>
                                             </td>
-                                            <td className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all" onClick={() => editWarga(w.id)}>
-                                                        <i className="fa-solid fa-pen text-indigo-500"></i> Edit
-                                                    </button>
-                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all" onClick={() => hapusWarga(w.id)}>
-                                                        <i className="fa-regular fa-trash-can"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            {isAdmin && (
+                                                <td className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all" onClick={() => editWarga(w.id)}>
+                                                            <i className="fa-solid fa-pen text-indigo-500"></i> Edit
+                                                        </button>
+                                                        <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all" onClick={() => hapusWarga(w.id)}>
+                                                            <i className="fa-regular fa-trash-can"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

@@ -53,7 +53,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-100 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-indigo-50 via-white to-slate-100 flex items-center justify-center p-4 overflow-y-auto">
             {/* Background Decorations */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-200/30 rounded-full blur-3xl"></div>

@@ -20,7 +20,6 @@ export default function RootLayout({ children }) {
         <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/50">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="relative flex flex-row justify-between items-center py-3 sm:py-4">
-
               {/* Logo / Title */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
@@ -31,10 +30,8 @@ export default function RootLayout({ children }) {
                   <p className="text-xs font-medium text-slate-500 mt-1">RW 11 Dashboard</p>
                 </div>
               </div>
-
               {/* Links */}
               <NavBar />
-
             </div>
           </div>
         </nav>
