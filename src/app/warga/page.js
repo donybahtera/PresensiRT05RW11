@@ -134,70 +134,89 @@ export default function WargaPage() {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">Daftar Warga RT 05 RW 11</h2>
                         <p className="text-sm text-slate-500 mt-1">Total {wargaList.length} KK terdaftar dalam sistem.</p>
                     </div>
                 </div>
 
-                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                    <table className="w-full text-left whitespace-nowrap custom-table-inlined">
-                        <thead>
-                            <tr>
-                                <th className="w-16 text-center">No</th>
-                                <th>Nama KK</th>
-                                <th>Alamat Domisili</th>
-                                <th className="text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-3 text-slate-400">
-                                            <i className="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i>
-                                            <p className="text-sm">Menyinkronkan data...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : wargaList.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-3 text-slate-400">
-                                            <i className="fa-solid fa-users-slash text-3xl opacity-50"></i>
-                                            <p className="text-sm">Silakan mulai dengan mendaftarkan warga pertama.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                wargaList.map((w, i) => (
-                                    <tr key={w.id}>
-                                        <td className="text-center font-medium text-slate-400">{i + 1}</td>
-                                        <td><strong className="text-slate-800 font-semibold">{w.nama}</strong></td>
-                                        <td>
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 text-slate-600 text-sm border border-slate-100">
-                                                <i className="fa-solid fa-location-dot text-slate-400 text-xs"></i>
-                                                {w.blok ? `${w.blok} / ` : ''}{w.no_rumah}
-                                            </span>
-                                        </td>
-                                        <td className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 py-1.5 px-3 text-xs" onClick={() => editWarga(w.id)}>
-                                                    <i className="fa-solid fa-pen text-indigo-500"></i> Edit
-                                                </button>
-                                                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 py-1.5 px-3 text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200" onClick={() => hapusWarga(w.id)}>
-                                                    <i className="fa-regular fa-trash-can"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                {loading ? (
+                    <div className="text-center py-12 text-slate-400">
+                        <i className="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400 mb-3"></i>
+                        <p className="text-sm">Menyinkronkan data...</p>
+                    </div>
+                ) : wargaList.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                        <i className="fa-solid fa-users-slash text-3xl opacity-50 mb-3"></i>
+                        <p className="text-sm">Silakan mulai dengan mendaftarkan warga pertama.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Mobile: card list */}
+                        <div className="sm:hidden space-y-2">
+                            {wargaList.map((w, i) => (
+                                <div key={w.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                    <span className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-400 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-slate-800 text-sm truncate">{w.nama}</p>
+                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                            <i className="fa-solid fa-location-dot text-slate-300"></i>
+                                            {w.blok ? `${w.blok} / ` : ''}{w.no_rumah}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-1.5 shrink-0">
+                                        <button className="p-2 rounded-lg border border-slate-200 bg-white text-indigo-500" onClick={() => editWarga(w.id)}>
+                                            <i className="fa-solid fa-pen text-xs"></i>
+                                        </button>
+                                        <button className="p-2 rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusWarga(w.id)}>
+                                            <i className="fa-regular fa-trash-can text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop: table */}
+                        <div className="hidden sm:block w-full overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-left whitespace-nowrap custom-table-inlined">
+                                <thead>
+                                    <tr>
+                                        <th className="w-16 text-center">No</th>
+                                        <th>Nama KK</th>
+                                        <th>Alamat Domisili</th>
+                                        <th className="text-right">Aksi</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                </thead>
+                                <tbody>
+                                    {wargaList.map((w, i) => (
+                                        <tr key={w.id}>
+                                            <td className="text-center font-medium text-slate-400">{i + 1}</td>
+                                            <td><strong className="text-slate-800 font-semibold">{w.nama}</strong></td>
+                                            <td>
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 text-slate-600 text-sm border border-slate-100">
+                                                    <i className="fa-solid fa-location-dot text-slate-400 text-xs"></i>
+                                                    {w.blok ? `${w.blok} / ` : ''}{w.no_rumah}
+                                                </span>
+                                            </td>
+                                            <td className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all" onClick={() => editWarga(w.id)}>
+                                                        <i className="fa-solid fa-pen text-indigo-500"></i> Edit
+                                                    </button>
+                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all" onClick={() => hapusWarga(w.id)}>
+                                                        <i className="fa-regular fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

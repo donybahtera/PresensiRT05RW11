@@ -140,80 +140,106 @@ export default function PertemuanPage() {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">Arsip Pertemuan RT</h2>
                         <p className="text-sm text-slate-500 mt-1">Daftar semua agenda pertemuan yang pernah dilaksanakan.</p>
                     </div>
                 </div>
 
-                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                    <table className="w-full text-left whitespace-nowrap custom-table-inlined">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Detail Agenda</th>
-                                <th>Kas/Jimpitan</th>
-                                <th className="text-right">Manajemen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-3 text-slate-400">
-                                            <i className="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i>
-                                            <p className="text-sm">Memuat data cloud...</p>
+                {loading ? (
+                    <div className="text-center py-12 text-slate-400">
+                        <i className="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400 mb-3"></i>
+                        <p className="text-sm">Memuat data cloud...</p>
+                    </div>
+                ) : pertemuanList.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                        <i className="fa-regular fa-folder-open text-3xl opacity-50 mb-3"></i>
+                        <p className="text-sm">Belum ada agenda pertemuan apa pun.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Mobile: card list */}
+                        <div className="sm:hidden space-y-3">
+                            {pertemuanList.map(p => (
+                                <div key={p.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div>
+                                            <p className="font-bold text-slate-800">{p.nama_pertemuan}</p>
+                                            <p className="text-xs text-slate-400 mt-0.5">
+                                                <i className="fa-regular fa-calendar mr-1"></i>{formatTanggal(p.tanggal)}
+                                            </p>
+                                            {p.catatan && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{p.catatan}</p>}
                                         </div>
-                                    </td>
-                                </tr>
-                            ) : pertemuanList.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-3 text-slate-400">
-                                            <i className="fa-regular fa-folder-open text-3xl opacity-50"></i>
-                                            <p className="text-sm">Belum ada agenda pertemuan apa pun.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                pertemuanList.map(p => (
-                                    <tr key={p.id}>
-                                        <td>
-                                            <span className="inline-block px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 font-medium text-slate-600">
-                                                <i className="fa-regular fa-calendar text-slate-400 mr-1.5"></i>
-                                                {formatTanggal(p.tanggal)}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <p className="font-bold text-slate-800 mb-0.5">{p.nama_pertemuan}</p>
-                                            <p className="text-sm text-slate-500 max-w-[250px] truncate">{p.catatan || 'Tidak ada deskripsi.'}</p>
-                                        </td>
-                                        <td>
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                                {formatRupiah(p.total_jimpitan || 0)}
-                                            </span>
-                                        </td>
-                                        <td className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Link href={`/presensi?id=${p.id}`} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 focus:ring-indigo-500 active:bg-indigo-800 py-1.5 px-3 text-xs w-[120px]" title="Buka absensi">
-                                                    <i className="fa-solid fa-list-check"></i> Absensi
-                                                </Link>
-                                                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 py-1.5 px-2.5 text-xs text-slate-600" onClick={() => editPertemuan(p.id)} title="Edit">
-                                                    <i className="fa-solid fa-pen"></i>
-                                                </button>
-                                                <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-xl outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-200 py-1.5 px-2.5 text-xs text-rose-500 hover:bg-rose-50 hover:border-rose-200" onClick={() => hapusPertemuan(p.id)} title="Hapus">
-                                                    <i className="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
+                                            {formatRupiah(p.total_jimpitan || 0)}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Link href={`/presensi?id=${p.id}`} className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white">
+                                            <i className="fa-solid fa-list-check"></i> Absensi
+                                        </Link>
+                                        <button className="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-600" onClick={() => editPertemuan(p.id)}>
+                                            <i className="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button className="px-3 py-2 text-xs rounded-lg border border-rose-100 bg-white text-rose-500" onClick={() => hapusPertemuan(p.id)}>
+                                            <i className="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop: table */}
+                        <div className="hidden sm:block w-full overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-left whitespace-nowrap custom-table-inlined">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Detail Agenda</th>
+                                        <th>Kas/Jimpitan</th>
+                                        <th className="text-right">Manajemen</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                </thead>
+                                <tbody>
+                                    {pertemuanList.map(p => (
+                                        <tr key={p.id}>
+                                            <td>
+                                                <span className="inline-block px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 font-medium text-slate-600">
+                                                    <i className="fa-regular fa-calendar text-slate-400 mr-1.5"></i>
+                                                    {formatTanggal(p.tanggal)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <p className="font-bold text-slate-800 mb-0.5">{p.nama_pertemuan}</p>
+                                                <p className="text-sm text-slate-500 max-w-[250px] truncate">{p.catatan || 'Tidak ada deskripsi.'}</p>
+                                            </td>
+                                            <td>
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                                    {formatRupiah(p.total_jimpitan || 0)}
+                                                </span>
+                                            </td>
+                                            <td className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Link href={`/presensi?id=${p.id}`} className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all w-[110px] justify-center">
+                                                        <i className="fa-solid fa-list-check"></i> Absensi
+                                                    </Link>
+                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" onClick={() => editPertemuan(p.id)}>
+                                                        <i className="fa-solid fa-pen"></i>
+                                                    </button>
+                                                    <button className="py-1.5 px-2.5 text-xs rounded-xl border border-slate-200 bg-white text-rose-500 hover:bg-rose-50 hover:border-rose-200" onClick={() => hapusPertemuan(p.id)}>
+                                                        <i className="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
